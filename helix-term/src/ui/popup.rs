@@ -196,11 +196,11 @@ impl<T: Component> Component for Popup<T> {
                 let _ = self.contents.handle_event(event, cx);
                 EventResult::Consumed(Some(close_fn))
             }
-            ctrl!('d') => {
+            ctrl!('d') | ctrl!(Down) => {
                 self.scroll(self.size.1 as usize / 2, true);
                 EventResult::Consumed(None)
             }
-            ctrl!('u') => {
+            ctrl!('u') | ctrl!(Up) => {
                 self.scroll(self.size.1 as usize / 2, false);
                 EventResult::Consumed(None)
             }
