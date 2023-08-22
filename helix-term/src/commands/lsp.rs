@@ -3,7 +3,7 @@ use helix_lsp::{
     block_on,
     lsp::{
         self, CodeAction, CodeActionOrCommand, CodeActionTriggerKind, DiagnosticSeverity,
-        NumberOrString,
+        NumberOrString, SymbolInformation, SymbolKind,
     },
     util::{diagnostic_to_lsp_diagnostic, lsp_range_to_range, range_to_lsp_range},
     Client, OffsetEncoding,
@@ -101,6 +101,25 @@ impl ui::menu::Item for lsp::Location {
     }
 }
 
+fn prefix_symbol(symbol: &SymbolInformation) -> String {
+    match symbol.kind {
+        SymbolKind::FUNCTION => format!("󰊕 │ {}", symbol.name),
+        SymbolKind::STRUCT => format!(" │ {}", symbol.name),
+        SymbolKind::VARIABLE => format!("󰫧 │ {}", symbol.name),
+        SymbolKind::PROPERTY => format!(" │ {}", symbol.name),
+        SymbolKind::FIELD => format!("󰨾 │ {}", symbol.name),
+        SymbolKind::ENUM => format!(" │ {}", symbol.name),
+        SymbolKind::ENUM_MEMBER => format!(" │ {}", symbol.name),
+        SymbolKind::MODULE => format!("󰕳 │ {}", symbol.name),
+        SymbolKind::TYPE_PARAMETER => format!(" │ {}", symbol.name),
+        SymbolKind::NAMESPACE => format!(" │ {}", symbol.name),
+        SymbolKind::ARRAY => format!(" │ {}", symbol.name),
+        SymbolKind::METHOD => format!(" │ {}", symbol.name),
+        SymbolKind::BOOLEAN => format!(" │ {}", symbol.name),
+        _ => symbol.name.clone(),
+    }
+}
+
 struct SymbolInformationItem {
     symbol: lsp::SymbolInformation,
     offset_encoding: OffsetEncoding,
@@ -111,8 +130,9 @@ impl ui::menu::Item for SymbolInformationItem {
     type Data = Option<lsp::Url>;
 
     fn format(&self, current_doc_path: &Self::Data) -> Row {
+        let name = prefix_symbol(&self.symbol);
         if current_doc_path.as_ref() == Some(&self.symbol.location.uri) {
-            self.symbol.name.as_str().into()
+            name.into()
         } else {
             match self.symbol.location.uri.to_file_path() {
                 Ok(path) => {
@@ -431,6 +451,7 @@ pub fn workspace_symbol_picker(cx: &mut Context) {
                         serde_json::from_value::<Option<Vec<lsp::SymbolInformation>>>(json)?
                             .unwrap_or_default()
                             .into_iter()
+                            // potential
                             .map(|symbol| SymbolInformationItem {
                                 symbol,
                                 offset_encoding,
